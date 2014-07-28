@@ -5,23 +5,46 @@
 
 require "Window"
 
+
+local ZONE_COLOUR = 'ff4386DE'
+local FACE_COLOUR = 'ffDE9B43'
+local LINE_LENGTH = 70
+
 -----------------------------------------------------------------------------------------------
 -- Test Module Definition
 -----------------------------------------------------------------------------------------------
 local stalker_zone = {} 
 
-local nAngle = 140
-
-local nSegments = 10
-
-local nLeftAngle = 180 - (nAngle/2)
-local nRightAngle = 180 + (nAngle/2)
-
 function stalker_zone:new(o)
   local obj = o or {}
   setmetatable(obj, self)
   self.__index = self 
+  self.tSettings = {}
+  self.tSettings.nAngle = 100
+  self.tSettings.bShowFacing=false
+  self.tSettings.nThickness = 4
+  self.tSettings.bOnlyCombat = false
+  self.tSettings.aUseLAS = {true,true,true,true}
   return obj
+end
+
+function stalker_zone:build_window()
+  self.cConfigWindow:FindChild('List'):ArrangeChildrenVert()
+  self.cConfigWindow:FindChild('text_angle'):SetText(self.tSettings.nAngle..'°')
+  self.cConfigWindow:FindChild('text_thickness'):SetText(self.tSettings.nThickness..'px')
+  self.cConfigWindow:FindChild('button_facingline'):SetCheck(self.tSettings.bShowFacing)
+  self.cConfigWindow:FindChild('button_onlycombat'):SetCheck(self.tSettings.bOnlyCombat)
+  self.cConfigWindow:FindChild('button_las_1'):SetCheck(self.tSettings.aUseLAS[1])
+  self.cConfigWindow:FindChild('button_las_2'):SetCheck(self.tSettings.aUseLAS[2])
+  self.cConfigWindow:FindChild('button_las_3'):SetCheck(self.tSettings.aUseLAS[3])
+  self.cConfigWindow:FindChild('button_las_4'):SetCheck(self.tSettings.aUseLAS[4])
+  self.cConfigWindow:FindChild('slider_angle'):SetValue(self.tSettings.nAngle)
+  self.cConfigWindow:FindChild('slider_thickness'):SetValue(self.tSettings.nThickness)
+end
+
+function stalker_zone:recalculate_angle()
+  self.nLeftAngle = 180 - (self.tSettings.nAngle/2)
+  self.nRightAngle = 180 + (self.tSettings.nAngle/2)
 end
 
 function stalker_zone:init()
@@ -42,6 +65,13 @@ function stalker_zone:OnLoad()
     'config_window',
     nil,
     self)
+  Apollo.RegisterSlashCommand("sz","invoke",self)
+  self:recalculate_angle()
+  self.cConfigWindow:Show(false)
+  self:build_window()
+end
+
+function stalker_zone:invoke()
   self.cConfigWindow:Show(true)
 end
 
@@ -54,58 +84,115 @@ function stalker_zone:draw_zone()
   -- If not a stalker
   --if GameLib.GetPlayerUnit():GetClassId() ~= GameLib.CodeEnumClass.Stalker then return end
 
+  if self.tSettings.bOnlyCombat then if not GameLib.GetPlayerUnit():IsInCombat() then return end end
   
 
+  -- if not neutral or  hostile. need to add cusotmisation options
+  if GameLib.GetPlayerUnit():GetDispositionTo(GameLib.GetPlayerUnit():GetTarget()) ==3 or GameLib.GetPlayerUnit():GetDispositionTo(GameLib.GetPlayerUnit():GetTarget()) == 2 then return end
+
+  local player_pos = GameLib.GetPlayerUnit():GetPosition()
+  local player_pos_vector = Vector3.New(player_pos.x,player_pos.y,player_pos.z)
 
   local targ_face = targ:GetFacing()
   local targ_angle = math.atan2(targ_face.x, targ_face.z)
-  local left_point = targ_angle + math.rad(nLeftAngle)
-  local right_point = targ_angle + math.rad(nRightAngle)
+  local left_point = targ_angle + math.rad(self.nLeftAngle)
+  local right_point = targ_angle + math.rad(self.nRightAngle)
 
   local targ_screen_pos = GameLib.GetUnitScreenPosition(targ)
   local targ_pos = targ:GetPosition()
   local targ_pos_vector = Vector3.New(targ_pos.x,targ_pos.y,targ_pos.z)
 
-  local left_vector = Vector3.New(targ_pos_vector.x+7*math.sin(left_point), targ_pos_vector.y, targ_pos_vector.z+7*math.cos(left_point))
-  self:draw_line(left_vector, targ_pos_vector)
-
-  left_vector = Vector3.New(targ_pos_vector.x+7*math.sin(left_point), targ_pos_vector.y, targ_pos_vector.z+7*math.cos(left_point))
-  self:draw_line(left_vector, targ_pos_vector)
-
-  local last_vec = left_vector
-
-  local angle_diff = math.rad(nAngle)
-
-  local arc_start = targ_angle+(math.pi-angle_diff/2)
-  local arc_end = (targ_angle+(math.pi-angle_diff/2))+angle_diff
-
-  for i = arc_start, arc_end, (arc_end-arc_start)/nSegments do
-    local new_vec = Vector3.New(targ_pos_vector.x + (7 * math.sin(i)), targ_pos_vector.y, targ_pos_vector.z + (7 * math.cos(i)))
-    self:draw_line(last_vec,new_vec)
-    last_vec = new_vec
-  end
 
 
-
-  local right_vector = Vector3.New(targ_pos_vector.x+7*math.sin(right_point), targ_pos_vector.y, targ_pos_vector.z+7*math.cos(right_point))
-  self:draw_line(right_vector, targ_pos_vector)
+if  self.tSettings.bShowFacing then 
+  local face_vector = Vector3.New(targ_pos_vector.x+LINE_LENGTH*math.sin(targ_angle), targ_pos_vector.y, targ_pos_vector.z+LINE_LENGTH*math.cos(targ_angle))
+  --local arrow_left_vector = Vector3.New(targ_pos_vector.x+6.5*math.sin(targ_angle-math.rad(5)), targ_pos_vector.y, targ_pos_vector.z+6.5*math.cos(targ_angle-math.rad(5)))
+  --local arrow_right_vector = Vector3.New(targ_pos_vector.x+6.5*math.sin(targ_angle+math.rad(5)), targ_pos_vector.y, targ_pos_vector.z+6.5*math.cos(targ_angle+math.rad(5)))
+  self:draw_line(targ_pos_vector, face_vector,FACE_COLOUR)
 end
 
-function stalker_zone:draw_line(vec1, vec2)
+  local left_vector = Vector3.New(targ_pos_vector.x+LINE_LENGTH*math.sin(left_point), targ_pos_vector.y, targ_pos_vector.z+LINE_LENGTH*math.cos(left_point))
+
+  self:draw_line(left_vector, targ_pos_vector,ZONE_COLOUR)
+
+  local right_vector = Vector3.New(targ_pos_vector.x+LINE_LENGTH*math.sin(right_point), targ_pos_vector.y, targ_pos_vector.z+LINE_LENGTH*math.cos(right_point))
+  self:draw_line(right_vector, targ_pos_vector,ZONE_COLOUR)
+
+ -- self:draw_line(face_vector,arrow_right_vector,'ffDE9B43')
+ -- self:draw_line(face_vector,arrow_left_vector,'ffDE9B43')
+
+
+  -- local last_vec = left_vector
+
+  -- local angle_diff = math.rad(self.tSettings.nAngle)
+
+  -- local arc_start = targ_angle+(math.pi-angle_diff/2)
+  -- local arc_end = (targ_angle+(math.pi-angle_diff/2))+angle_diff
+
+  -- for i = arc_start, arc_end, (arc_end-arc_start)/self.nSegments do
+  --   local new_vec = Vector3.New(targ_pos_vector.x + (7 * math.sin(i)), targ_pos_vector.y, targ_pos_vector.z + (7 * math.cos(i)))
+  --   self:draw_line(last_vec,new_vec)
+  --   last_vec = new_vec
+  -- end
+
+
+end
+
+function stalker_zone:OnSave(type)
+  if type ~= GameLib.CodeEnumAddonSaveLevel.Account then return end
+  return self.tSettings
+end
+
+function stalker_zone:OnRestore(type,table)
+  for k,v in pairs(table) do
+    self.tSettings[k]=v
+  end
+  self:build_window()
+end
+
+function stalker_zone:draw_line(vec1, vec2, col)
   local start_point = GameLib.WorldLocToScreenPoint(vec1)
   local end_point = GameLib.WorldLocToScreenPoint(vec2)
   self.cPanel:AddPixie( {
-    bLine = true, fWidth = 6, cr = "ff000000",
+    bLine = true, fWidth = self.tSettings.nThickness*1.5, cr = 'ff000000',
     loc = { fPoints = { 0, 0, 0, 0 }, nOffsets = { start_point.x, start_point.y, end_point.x, end_point.y } }
     })
   self.cPanel:AddPixie( {
-    bLine = true, fWidth = 4, cr = "FFff00ff",
+    bLine = true, fWidth = self.tSettings.nThickness, cr = col or 'ffff00ff',
     loc = { fPoints = { 0, 0, 0, 0 }, nOffsets = { start_point.x, start_point.y, end_point.x, end_point.y } }
     })
 end
-  function round(v, p)
-local mult = math.pow(10, p or 0) -- round to 0 places when p not supplied
-    return math.floor(v * mult + 0.5) / mult;
-end;
+
+function stalker_zone:event_change_angle(handler,control,value)
+  self.tSettings.nAngle = value or 100
+  self.nSegments = value or 100
+  self:recalculate_angle()
+
+  self:build_window()
+end
+
+function stalker_zone:event_change_thickness(handler,control,value)
+  self.tSettings.nThickness = value or 100
+
+  self:build_window()
+end
+
+function stalker_zone:event_toggle_onlycombat(handler,control)
+  self.tSettings.bOnlyCombat = control:IsChecked() or false
+
+  self:build_window()
+end
+
+function stalker_zone:event_toggle_facing(handler,control)
+  self.tSettings.bShowFacing = control:IsChecked() or false
+
+  self:build_window()
+end
+
+function stalker_zone:set_las(handler,control)
+  local num = tonumber(control:GetName():sub(-1))
+  local on = control:IsChecked()
+  self.tSettings.aUseLAS[num] = on
+end
 
 stalker_zone:new():init()
