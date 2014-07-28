@@ -40,6 +40,7 @@ end
 
 function stalker_zone:draw_zone()
   self.cPanel:DestroyAllPixies()
+  if not GameLib.GetPlayerUnit() then return end
   local targ = GameLib.GetPlayerUnit():GetTarget()
   -- If no target
   if not targ then return end
