@@ -30,12 +30,19 @@ function stalker_zone:init()
 end
 
 function stalker_zone:OnLoad()
+  local xmlDoc = XmlDoc.CreateFromFile('stalker-zone.xml')
   -- load our form file
   self.cPanel = Apollo.LoadForm(
-    XmlDoc.CreateFromFile('stalker-zone.xml'),
+    xmlDoc,
     'draw_panel',
     'InWorldHudStratum',
     self)
+  self.cConfigWindow= Apollo.LoadForm(
+    xmlDoc,
+    'config_window',
+    nil,
+    self)
+  self.cConfigWindow:Show(true)
 end
 
 function stalker_zone:draw_zone()
