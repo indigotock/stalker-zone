@@ -45,7 +45,7 @@ function stalker_zone:draw_zone()
   -- If no target
   if not targ then return end
   -- If not a stalker
-  if GameLib.GetPlayerUnit():GetClassId() ~= GameLib.CodeEnumClass.Stalker then return end
+  --if GameLib.GetPlayerUnit():GetClassId() ~= GameLib.CodeEnumClass.Stalker then return end
 
   
 
