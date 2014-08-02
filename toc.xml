@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Addon Author="" APIVersion="9" Name="Stalker Zone" Description="">
+    <Script Name="brucey-tools/gui/drop_button.lua"/>
+    <Script Name="brucey-tools/gui/number_ticker.lua"/>
+    <Script Name="brucey-tools/gui/search_list.lua"/>
+    <Script Name="brucey-tools/util.lua"/>
+
     <Script Name="stalker-zone.lua"/>
     <Form Name="stalker-zone.xml"/>
 </Addon>
