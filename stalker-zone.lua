@@ -5,10 +5,7 @@
 
 require "Window"
 
-
-local ZONE_COLOUR = 'ff4386DE'
-local FACE_COLOUR = 'ffDE9B43'
-local LINE_LENGTH = 70
+local LINE_LENGTH = 20
 
 -----------------------------------------------------------------------------------------------
 -- Test Module Definition
@@ -19,9 +16,27 @@ function stalker_zone:new(o)
   local obj = o or {}
   setmetatable(obj, self)
   self.__index = self 
+
+  obj.btools = {}
+  obj.btools.util = Apollo.GetPackage('indigotock.btools.util').tPackage
+  obj.btools.gui = {}
+  obj.btools.gui.drop_button =
+  Apollo.GetPackage('indigotock.btools.gui.drop_button').tPackage
+  obj.btools.gui.number_ticker =
+  Apollo.GetPackage('indigotock.btools.gui.number_ticker').tPackage
+  obj.btools.gui.search_list =
+  Apollo.GetPackage('indigotock.btools.gui.search_list').tPackage
+  obj.btools.gui.slider =
+  Apollo.GetPackage('indigotock.btools.gui.slider').tPackage
+  obj.btools.gui.colour_picker =
+  Apollo.GetPackage('indigotock.btools.gui.colour_picker').tPackage
+
+
   self.tSettings = {}
-  self.tSettings.nAngle = 100
+  self.tSettings.nAngle = 140
   self.tSettings.bShowFacing=false
+  self.tSettings.sZoneColour = 'ff4386DE'
+  self.tSettings.sFacingColour = 'ffDE9B43'
   self.tSettings.nThickness = 4
   self.tSettings.bOnlyCombat = false
   self.tSettings.aUseLAS = {true,true,true,true}
@@ -29,17 +44,46 @@ function stalker_zone:new(o)
 end
 
 function stalker_zone:build_window()
-  self.cConfigWindow:FindChild('List'):ArrangeChildrenVert()
-  self.cConfigWindow:FindChild('text_angle'):SetText(self.tSettings.nAngle..'°')
-  self.cConfigWindow:FindChild('text_thickness'):SetText(self.tSettings.nThickness..'px')
+  if self.cConfigWindow:FindChild('thickness_slider'):FindChild('slider') then
+    self.cConfigWindow:FindChild('thickness_slider'):DestroyChildren()
+  end
+  if self.cConfigWindow:FindChild('angle_slider'):FindChild('slider') then
+    self.cConfigWindow:FindChild('angle_slider'):DestroyChildren()
+  end
+  if self.cConfigWindow:FindChild('line_colour_picker'):FindChild('red_slider') then
+    self.cConfigWindow:FindChild('line_colour_picker'):DestroyChildren()
+  end
+  if self.cConfigWindow:FindChild('facing_colour_picker'):FindChild('red_slider') then
+    self.cConfigWindow:FindChild('facing_colour_picker'):DestroyChildren()
+  end
+  --self.cConfigWindow:FindChild('List'):ArrangeChildrenVert()
   self.cConfigWindow:FindChild('button_facingline'):SetCheck(self.tSettings.bShowFacing)
   self.cConfigWindow:FindChild('button_onlycombat'):SetCheck(self.tSettings.bOnlyCombat)
   self.cConfigWindow:FindChild('button_las_1'):SetCheck(self.tSettings.aUseLAS[1])
   self.cConfigWindow:FindChild('button_las_2'):SetCheck(self.tSettings.aUseLAS[2])
   self.cConfigWindow:FindChild('button_las_3'):SetCheck(self.tSettings.aUseLAS[3])
   self.cConfigWindow:FindChild('button_las_4'):SetCheck(self.tSettings.aUseLAS[4])
-  self.cConfigWindow:FindChild('slider_angle'):SetValue(self.tSettings.nAngle)
-  self.cConfigWindow:FindChild('slider_thickness'):SetValue(self.tSettings.nThickness)
+
+  self.btools.gui.slider(self.cConfigWindow:FindChild('thickness_slider'), {sHeader='Line Thickness:', nMinValue = 1, nMaxValue = 10, nInitialValue = self.tSettings.nThickness,
+    fChangeCallback = function(val) self.tSettings.nThickness = val self:recalculate_angle() end, fValueMod = function(val) return tostring(val)..'px' end})
+  self.btools.gui.slider(self.cConfigWindow:FindChild('angle_slider'), {sHeader = 'Angle:', nMinValue = 90, nMaxValue = 140, nInitialValue = self.tSettings.nAngle,
+    fChangeCallback = function(val) self.tSettings.nAngle = val self:recalculate_angle() end, fValueMod = function(val) return tostring(val)..'°' end})
+
+  self.btools.gui.colour_picker(self.cConfigWindow:FindChild('line_colour_picker'), {
+    fCallback = function(hex) self.tSettings.sZoneColour = hex end,
+    nRedValue = tonumber(string.sub(self.tSettings.sZoneColour,3,4), 16),
+    nGreenValue = tonumber(string.sub(self.tSettings.sZoneColour,5,6), 16),
+    nBlueValue = tonumber(string.sub(self.tSettings.sZoneColour,7,8), 16)
+    })
+
+  self.btools.gui.colour_picker(self.cConfigWindow:FindChild('facing_colour_picker'), {
+    fCallback = function(hex) self.tSettings.sFacingColour = hex end,
+    nRedValue = tonumber(string.sub(self.tSettings.sFacingColour,3,4), 16),
+    nGreenValue = tonumber(string.sub(self.tSettings.sFacingColour,5,6), 16),
+    nBlueValue = tonumber(string.sub(self.tSettings.sFacingColour,7,8), 16)
+    })
+  --self.cConfigWindow:FindChild('slider_angle'):SetValue(self.tSettings.nAngle)
+  --self.cConfigWindow:FindChild('slider_thickness'):SetValue(self.tSettings.nThickness)
 end
 
 function stalker_zone:recalculate_angle()
@@ -48,7 +92,7 @@ function stalker_zone:recalculate_angle()
 end
 
 function stalker_zone:init()
-  Apollo.RegisterAddon(self,false)
+  Apollo.RegisterAddon(self,true,'Stalker Zone',{})
   Apollo.RegisterEventHandler('NextFrame','draw_zone',self)
 end
 
@@ -67,8 +111,12 @@ function stalker_zone:OnLoad()
     self)
   Apollo.RegisterSlashCommand("sz","invoke",self)
   self:recalculate_angle()
-  self.cConfigWindow:Show(false)
+  self.cConfigWindow:Show(true)
   self:build_window()
+end
+
+function stalker_zone:OnConfigure()
+  self:invoke()
 end
 
 function stalker_zone:invoke()
@@ -86,6 +134,8 @@ function stalker_zone:draw_zone()
 
   if self.tSettings.bOnlyCombat then if not GameLib.GetPlayerUnit():IsInCombat() then return end end
   
+
+  if not self.tSettings.aUseLAS[AbilityBook.GetCurrentSpec()] then return end
 
   -- if not neutral or  hostile. need to add cusotmisation options
   if GameLib.GetPlayerUnit():GetDispositionTo(GameLib.GetPlayerUnit():GetTarget()) ==3 or GameLib.GetPlayerUnit():GetDispositionTo(GameLib.GetPlayerUnit():GetTarget()) == 2 then return end
@@ -108,15 +158,15 @@ if  self.tSettings.bShowFacing then
   local face_vector = Vector3.New(targ_pos_vector.x+LINE_LENGTH*math.sin(targ_angle), targ_pos_vector.y, targ_pos_vector.z+LINE_LENGTH*math.cos(targ_angle))
   --local arrow_left_vector = Vector3.New(targ_pos_vector.x+6.5*math.sin(targ_angle-math.rad(5)), targ_pos_vector.y, targ_pos_vector.z+6.5*math.cos(targ_angle-math.rad(5)))
   --local arrow_right_vector = Vector3.New(targ_pos_vector.x+6.5*math.sin(targ_angle+math.rad(5)), targ_pos_vector.y, targ_pos_vector.z+6.5*math.cos(targ_angle+math.rad(5)))
-  self:draw_line(targ_pos_vector, face_vector,FACE_COLOUR)
+  self:draw_line(targ_pos_vector, face_vector,self.tSettings.sFacingColour)
 end
 
   local left_vector = Vector3.New(targ_pos_vector.x+LINE_LENGTH*math.sin(left_point), targ_pos_vector.y, targ_pos_vector.z+LINE_LENGTH*math.cos(left_point))
 
-  self:draw_line(left_vector, targ_pos_vector,ZONE_COLOUR)
+  self:draw_line(left_vector, targ_pos_vector,self.tSettings.sZoneColour)
 
   local right_vector = Vector3.New(targ_pos_vector.x+LINE_LENGTH*math.sin(right_point), targ_pos_vector.y, targ_pos_vector.z+LINE_LENGTH*math.cos(right_point))
-  self:draw_line(right_vector, targ_pos_vector,ZONE_COLOUR)
+  self:draw_line(right_vector, targ_pos_vector,self.tSettings.sZoneColour)
 
  -- self:draw_line(face_vector,arrow_right_vector,'ffDE9B43')
  -- self:draw_line(face_vector,arrow_left_vector,'ffDE9B43')
@@ -187,6 +237,10 @@ function stalker_zone:event_toggle_facing(handler,control)
   self.tSettings.bShowFacing = control:IsChecked() or false
 
   self:build_window()
+end
+
+function stalker_zone:event_close_config()
+self.cConfigWindow:Show(false)
 end
 
 function stalker_zone:set_las(handler,control)
