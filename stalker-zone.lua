@@ -19,6 +19,18 @@ function stalker_zone:new(o)
   local obj = o or {}
   setmetatable(obj, self)
   self.__index = self 
+
+  obj.btools = {}
+  obj.btools.util = Apollo.GetPackage('indigotock.btools.util').tPackage
+  obj.btools.gui = {}
+  obj.btools.gui.drop_button =
+  Apollo.GetPackage('indigotock.btools.gui.drop_button').tPackage
+  obj.btools.gui.number_ticker =
+  Apollo.GetPackage('indigotock.btools.gui.number_ticker').tPackage
+  obj.btools.gui.search_list =
+  Apollo.GetPackage('indigotock.btools.gui.search_list').tPackage
+
+
   self.tSettings = {}
   self.tSettings.nAngle = 100
   self.tSettings.bShowFacing=false
