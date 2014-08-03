@@ -3,6 +3,8 @@
     <Script Name="brucey-tools/gui/drop_button.lua"/>
     <Script Name="brucey-tools/gui/number_ticker.lua"/>
     <Script Name="brucey-tools/gui/search_list.lua"/>
+    <Script Name="brucey-tools/gui/slider.lua"/>
+    <Script Name="brucey-tools/gui/colour_picker.lua"/>
     <Script Name="brucey-tools/util.lua"/>
     <Script Name="stalker-zone.lua"/>
     <Form Name="stalker-zone.xml"/>
