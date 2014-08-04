@@ -5,12 +5,20 @@
 
 require "Window"
 
-local LINE_LENGTH = 20
 
 -----------------------------------------------------------------------------------------------
 -- Test Module Definition
 -----------------------------------------------------------------------------------------------
 local stalker_zone = {} 
+
+local aDiffNames = {
+  'Normal Mob',
+  '',
+  'Tough Mob',
+  'Small Boss',
+  'Big Boss',
+  'Huge Boss'
+}
 
 function stalker_zone:new(o)
   local obj = o or {}
@@ -40,6 +48,7 @@ function stalker_zone:new(o)
   self.tSettings.nThickness = 4
   self.tSettings.bOnlyCombat = false
   self.tSettings.aUseLAS = {true,true,true,true}
+  self.tSettings.aDifficultyLengths = {5, 5, 7, 7, 10, 15}
   return obj
 end
 
@@ -55,6 +64,11 @@ function stalker_zone:build_window()
   end
   if self.cConfigWindow:FindChild('facing_colour_picker'):FindChild('red_slider') then
     self.cConfigWindow:FindChild('facing_colour_picker'):DestroyChildren()
+  end
+  for diff = 1, 6 do
+    if self.cConfigWindow:FindChild('diff_slider_'..diff) and self.cConfigWindow:FindChild('diff_slider_'..diff):FindChild('slider') then
+      self.cConfigWindow:FindChild('diff_slider_'..diff):DestroyChildren()
+    end
   end
   --self.cConfigWindow:FindChild('List'):ArrangeChildrenVert()
   self.cConfigWindow:FindChild('button_facingline'):SetCheck(self.tSettings.bShowFacing)
@@ -82,6 +96,17 @@ function stalker_zone:build_window()
     nGreenValue = tonumber(string.sub(self.tSettings.sFacingColour,5,6), 16),
     nBlueValue = tonumber(string.sub(self.tSettings.sFacingColour,7,8), 16)
     })
+
+
+  for diff = 1, 6 do
+    if diff ~= 2 then
+      self.btools.gui.slider(self.cConfigWindow:FindChild('diff_slider_'..diff), {
+        nMinValue = 3, nMaxValue=40, nInitialValue = self.tSettings.aDifficultyLengths[diff],
+        fChangeCallback = function(val) self.tSettings.aDifficultyLengths[diff] = val end,
+        sHeader = aDiffNames[diff]
+        })
+    end
+  end
   --self.cConfigWindow:FindChild('slider_angle'):SetValue(self.tSettings.nAngle)
   --self.cConfigWindow:FindChild('slider_thickness'):SetValue(self.tSettings.nThickness)
 end
@@ -152,21 +177,21 @@ function stalker_zone:draw_zone()
   local targ_pos = targ:GetPosition()
   local targ_pos_vector = Vector3.New(targ_pos.x,targ_pos.y,targ_pos.z)
 
-
-
-if  self.tSettings.bShowFacing then 
-  local face_vector = Vector3.New(targ_pos_vector.x+LINE_LENGTH*math.sin(targ_angle), targ_pos_vector.y, targ_pos_vector.z+LINE_LENGTH*math.cos(targ_angle))
+  local diff = targ:GetDifficulty() or 1
+  local line_len = self.tSettings.aDifficultyLengths[diff] or self.tSettings.aDifficultyLengths[1]
+  if  self.tSettings.bShowFacing then 
+    local face_vector = Vector3.New(targ_pos_vector.x+line_len*math.sin(targ_angle), targ_pos_vector.y, targ_pos_vector.z+line_len*math.cos(targ_angle))
   --local arrow_left_vector = Vector3.New(targ_pos_vector.x+6.5*math.sin(targ_angle-math.rad(5)), targ_pos_vector.y, targ_pos_vector.z+6.5*math.cos(targ_angle-math.rad(5)))
   --local arrow_right_vector = Vector3.New(targ_pos_vector.x+6.5*math.sin(targ_angle+math.rad(5)), targ_pos_vector.y, targ_pos_vector.z+6.5*math.cos(targ_angle+math.rad(5)))
   self:draw_line(targ_pos_vector, face_vector,self.tSettings.sFacingColour)
 end
 
-  local left_vector = Vector3.New(targ_pos_vector.x+LINE_LENGTH*math.sin(left_point), targ_pos_vector.y, targ_pos_vector.z+LINE_LENGTH*math.cos(left_point))
+local left_vector = Vector3.New(targ_pos_vector.x+line_len*math.sin(left_point), targ_pos_vector.y, targ_pos_vector.z+line_len*math.cos(left_point))
 
-  self:draw_line(left_vector, targ_pos_vector,self.tSettings.sZoneColour)
+self:draw_line(left_vector, targ_pos_vector,self.tSettings.sZoneColour)
 
-  local right_vector = Vector3.New(targ_pos_vector.x+LINE_LENGTH*math.sin(right_point), targ_pos_vector.y, targ_pos_vector.z+LINE_LENGTH*math.cos(right_point))
-  self:draw_line(right_vector, targ_pos_vector,self.tSettings.sZoneColour)
+local right_vector = Vector3.New(targ_pos_vector.x+line_len*math.sin(right_point), targ_pos_vector.y, targ_pos_vector.z+line_len*math.cos(right_point))
+self:draw_line(right_vector, targ_pos_vector,self.tSettings.sZoneColour)
 
  -- self:draw_line(face_vector,arrow_right_vector,'ffDE9B43')
  -- self:draw_line(face_vector,arrow_left_vector,'ffDE9B43')
@@ -240,7 +265,7 @@ function stalker_zone:event_toggle_facing(handler,control)
 end
 
 function stalker_zone:event_close_config()
-self.cConfigWindow:Show(false)
+  self.cConfigWindow:Show(false)
 end
 
 function stalker_zone:set_las(handler,control)
