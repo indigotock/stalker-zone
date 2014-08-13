@@ -22,6 +22,7 @@ local aDiffNames = {
 
 function stalker_zone:new(o)
   local obj = o or {}
+
   setmetatable(obj, self)
   self.__index = self 
 
@@ -39,7 +40,11 @@ function stalker_zone:new(o)
   obj.btools.gui.colour_picker =
   Apollo.GetPackage('indigotock.btools.gui.colour_picker').tPackage
 
+  self:set_defaults()
+  return obj
+end
 
+function stalker_zone:set_defaults()
   self.tSettings = {}
   self.tSettings.nAngle = 140
   self.tSettings.bShowFacing=false
@@ -49,7 +54,7 @@ function stalker_zone:new(o)
   self.tSettings.bOnlyCombat = false
   self.tSettings.aUseLAS = {true,true,true,true}
   self.tSettings.aDifficultyLengths = {5, 5, 7, 7, 10, 15}
-  return obj
+  self.tSettings.aMobOverrides = { ['Mystwing Shredder'] = 75 }
 end
 
 function stalker_zone:build_window()
@@ -109,8 +114,35 @@ function stalker_zone:build_window()
         })
     end
   end
-  --self.cConfigWindow:FindChild('slider_angle'):SetValue(self.tSettings.nAngle)
-  --self.cConfigWindow:FindChild('slider_thickness'):SetValue(self.tSettings.nThickness)
+
+
+
+
+  local list = self.cOverrideWindow:FindChild('container')
+
+  list:DestroyChildren()
+
+  for name, len in pairs(self.tSettings.aMobOverrides) do
+    self:add_override_item(name, len)
+  end
+
+  self.cNewItem = Apollo.LoadForm(
+    self.xmlDoc,
+    'new_item',
+    list,
+    self
+    )
+
+  self.cNewTicker = self.btools.gui.number_ticker(self.cNewItem:FindChild('new_npc_length'),
+  {
+    nDivide = 0, nDefaultValue = 3
+}
+)
+
+  self.cNewItem:FindChild('button_del'):Show(false,true)
+
+  list:ArrangeChildrenVert()
+
 end
 
 function stalker_zone:recalculate_angle()
@@ -124,35 +156,69 @@ function stalker_zone:init()
 end
 
 function stalker_zone:OnLoad()
-  local xmlDoc = XmlDoc.CreateFromFile('stalker-zone.xml')
+  self.xmlDoc = XmlDoc.CreateFromFile('stalker-zone.xml')
   -- load our form file
   self.cPanel = Apollo.LoadForm(
-    xmlDoc,
+    self.xmlDoc,
     'draw_panel',
     'InWorldHudStratum',
     self)
   self.cConfigWindow= Apollo.LoadForm(
-    xmlDoc,
+    self.xmlDoc,
     'config_window',
     nil,
     self)
 
 
   self.cOverrideWindow = Apollo.LoadForm(
-    xmlDoc,
+    self.xmlDoc,
     'override_window',
     nil,
     self)
 
   self.cOverrideWindow:Show(true)
 
-  self.btools.gui.number_ticker(self.cOverrideWindow:FindChild('new_npc_length'))
-
-
   Apollo.RegisterSlashCommand("sz","invoke",self)
   self:recalculate_angle()
   self.cConfigWindow:Show(true)
   self:build_window()
+
+  Apollo.RegisterEventHandler('TargetUnitChanged', 'event_change_target', self)
+end
+
+function stalker_zone:event_add_override(handler, control)
+  self.tSettings.aMobOverrides[self.cNewItem:FindChild('new_npc_name'):GetText()] = tonumber(self.cNewTicker:get_value()) or 1
+  self:build_window()
+end
+
+function stalker_zone:event_remove_override(handler, control)
+  self.tSettings.aMobOverrides[control:GetParent():FindChild('new_npc_name'):GetText()] = nil
+  self:build_window()
+end
+
+function stalker_zone:add_override_item(name, length)
+  local container = self.cOverrideWindow:FindChild('container')
+  local item = Apollo.LoadForm(
+    self.xmlDoc,
+    'new_item',
+    container,
+    self
+    )
+  item:FindChild('new_npc_name'):SetText(name or '')
+  self.btools.gui.number_ticker(item:FindChild('new_npc_length'),
+  {
+    nDivide = 0,
+    nDefaultValue = length,
+    fOnChangeValue = function(ticker, val) self.tSettings.aMobOverrides[name] = val end
+    })
+  item:FindChild('button_add'):Show(false,true)
+  return item
+end
+
+function stalker_zone:event_change_target(target)
+  if self.cNewItem and target then
+    self.cNewItem:FindChild('new_npc_name'):SetText(target:GetName() or '')
+  end
 end
 
 function stalker_zone:OnConfigure()
@@ -193,7 +259,7 @@ function stalker_zone:draw_zone()
   local targ_pos_vector = Vector3.New(targ_pos.x,targ_pos.y,targ_pos.z)
 
   local diff = targ:GetDifficulty() or 1
-  local line_len = self.tSettings.aDifficultyLengths[diff] or self.tSettings.aDifficultyLengths[1]
+  local line_len = self.tSettings.aMobOverrides[targ:GetName()] or self.tSettings.aDifficultyLengths[diff] or self.tSettings.aDifficultyLengths[1]
   if  self.tSettings.bShowFacing then 
     local face_vector = Vector3.New(targ_pos_vector.x+line_len*math.sin(targ_angle), targ_pos_vector.y, targ_pos_vector.z+line_len*math.cos(targ_angle))
   --local arrow_left_vector = Vector3.New(targ_pos_vector.x+6.5*math.sin(targ_angle-math.rad(5)), targ_pos_vector.y, targ_pos_vector.z+6.5*math.cos(targ_angle-math.rad(5)))
