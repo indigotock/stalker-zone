@@ -136,6 +136,19 @@ function stalker_zone:OnLoad()
     'config_window',
     nil,
     self)
+
+
+  self.cOverrideWindow = Apollo.LoadForm(
+    xmlDoc,
+    'override_window',
+    nil,
+    self)
+
+  self.cOverrideWindow:Show(true)
+
+  self.btools.gui.number_ticker(self.cOverrideWindow:FindChild('new_npc_length'))
+
+
   Apollo.RegisterSlashCommand("sz","invoke",self)
   self:recalculate_angle()
   self.cConfigWindow:Show(true)
@@ -239,6 +252,14 @@ function stalker_zone:draw_line(vec1, vec2, col)
     bLine = true, fWidth = self.tSettings.nThickness, cr = col or 'ffff00ff',
     loc = { fPoints = { 0, 0, 0, 0 }, nOffsets = { start_point.x, start_point.y, end_point.x, end_point.y } }
     })
+end
+
+function stalker_zone:event_text_enter(handler,control)
+
+end
+
+function stalker_zone:event_text_escape(handler, control)
+  control:SetText('')
 end
 
 function stalker_zone:event_change_angle(handler,control,value)
