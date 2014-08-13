@@ -87,14 +87,16 @@ function stalker_zone:build_window()
     fCallback = function(hex) self.tSettings.sZoneColour = hex end,
     nRedValue = tonumber(string.sub(self.tSettings.sZoneColour,3,4), 16),
     nGreenValue = tonumber(string.sub(self.tSettings.sZoneColour,5,6), 16),
-    nBlueValue = tonumber(string.sub(self.tSettings.sZoneColour,7,8), 16)
+    nBlueValue = tonumber(string.sub(self.tSettings.sZoneColour,7,8), 16),
+    nAlphaValue = tonumber(string.sub(self.tSettings.sZoneColour,1,2), 16)
     })
 
   self.btools.gui.colour_picker(self.cConfigWindow:FindChild('facing_colour_picker'), {
     fCallback = function(hex) self.tSettings.sFacingColour = hex end,
     nRedValue = tonumber(string.sub(self.tSettings.sFacingColour,3,4), 16),
     nGreenValue = tonumber(string.sub(self.tSettings.sFacingColour,5,6), 16),
-    nBlueValue = tonumber(string.sub(self.tSettings.sFacingColour,7,8), 16)
+    nBlueValue = tonumber(string.sub(self.tSettings.sFacingColour,7,8), 16),
+    nAlphaValue = tonumber(string.sub(self.tSettings.sFacingColour,1,2), 16)
     })
 
 
@@ -228,8 +230,9 @@ end
 function stalker_zone:draw_line(vec1, vec2, col)
   local start_point = GameLib.WorldLocToScreenPoint(vec1)
   local end_point = GameLib.WorldLocToScreenPoint(vec2)
+  local alpha = string.sub(col,1,2) or 'ff'
   self.cPanel:AddPixie( {
-    bLine = true, fWidth = self.tSettings.nThickness*1.5, cr = 'ff000000',
+    bLine = true, fWidth = self.tSettings.nThickness*1.5, cr = alpha..'000000',
     loc = { fPoints = { 0, 0, 0, 0 }, nOffsets = { start_point.x, start_point.y, end_point.x, end_point.y } }
     })
   self.cPanel:AddPixie( {
