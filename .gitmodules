@@ -1,3 +1,3 @@
-[submodule "brucey-tools"]
-	path = brucey-tools
+[submodule "btools"]
+	path = btools
 	url = https://github.com/indigotock/brucey-tools.git
