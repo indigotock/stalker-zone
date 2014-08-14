@@ -52,6 +52,7 @@ function stalker_zone:set_defaults()
   self.tSettings.sFacingColour = 'ffDE9B43'
   self.tSettings.nThickness = 4
   self.tSettings.bOnlyCombat = false
+  self.tSettings.bOnlyStalker = true
   self.tSettings.aUseLAS = {true,true,true,true}
   self.tSettings.aDifficultyLengths = {5, 5, 7, 7, 10, 15}
   self.tSettings.aMobOverrides = { ['Mystwing Shredder'] = 75 }
@@ -78,6 +79,7 @@ function stalker_zone:build_window()
   --self.cConfigWindow:FindChild('List'):ArrangeChildrenVert()
   self.cConfigWindow:FindChild('button_facingline'):SetCheck(self.tSettings.bShowFacing)
   self.cConfigWindow:FindChild('button_onlycombat'):SetCheck(self.tSettings.bOnlyCombat)
+  self.cConfigWindow:FindChild('button_onlystalker'):SetCheck(self.tSettings.bOnlyStalker)
   self.cConfigWindow:FindChild('button_las_1'):SetCheck(self.tSettings.aUseLAS[1])
   self.cConfigWindow:FindChild('button_las_2'):SetCheck(self.tSettings.aUseLAS[2])
   self.cConfigWindow:FindChild('button_las_3'):SetCheck(self.tSettings.aUseLAS[3])
@@ -136,13 +138,21 @@ function stalker_zone:build_window()
   self.cNewTicker = self.btools.gui.number_ticker(self.cNewItem:FindChild('new_npc_length'),
   {
     nDivide = 0, nDefaultValue = 3
-}
-)
+  }
+  )
 
   self.cNewItem:FindChild('button_del'):Show(false,true)
 
   list:ArrangeChildrenVert()
 
+end
+
+function stalker_zone:event_show_override_window()
+  self.cOverrideWindow:Show(true)
+end
+
+function stalker_zone:event_close_override_window()
+  self.cOverrideWindow:Show(false)
 end
 
 function stalker_zone:recalculate_angle()
@@ -185,10 +195,11 @@ function stalker_zone:OnLoad()
 
   Apollo.RegisterEventHandler('TargetUnitChanged', 'event_change_target', self)
 end
-
 function stalker_zone:event_add_override(handler, control)
-  self.tSettings.aMobOverrides[self.cNewItem:FindChild('new_npc_name'):GetText()] = tonumber(self.cNewTicker:get_value()) or 1
-  self:build_window()
+  if self.btools.util.trim_string(self.cNewItem:FindChild('new_npc_name'):GetText()) ~= '' then
+    self.tSettings.aMobOverrides[self.btools.util.trim_string(self.cNewItem:FindChild('new_npc_name'):GetText())] = tonumber(self.cNewTicker:get_value()) or 1
+    self:build_window()
+  end
 end
 
 function stalker_zone:event_remove_override(handler, control)
@@ -236,7 +247,7 @@ function stalker_zone:draw_zone()
   -- If no target
   if not targ then return end
   -- If not a stalker
-  if GameLib.GetPlayerUnit():GetClassId() ~= GameLib.CodeEnumClass.Stalker then return end
+  if GameLib.GetPlayerUnit():GetClassId() ~= GameLib.CodeEnumClass.Stalker and self.tSettings.bOnlyStalker then return end
 
   if self.tSettings.bOnlyCombat then if not GameLib.GetPlayerUnit():IsInCombat() then return end end
   
@@ -306,6 +317,8 @@ function stalker_zone:OnRestore(type,table)
   self:build_window()
 end
 
+
+
 function stalker_zone:draw_line(vec1, vec2, col)
   local start_point = GameLib.WorldLocToScreenPoint(vec1)
   local end_point = GameLib.WorldLocToScreenPoint(vec2)
@@ -344,6 +357,12 @@ end
 
 function stalker_zone:event_toggle_onlycombat(handler,control)
   self.tSettings.bOnlyCombat = control:IsChecked() or false
+
+  self:build_window()
+end
+
+function stalker_zone:event_toggle_stalkeronly(handler,control)
+  self.tSettings.bOnlyStalker = control:IsChecked() or false
 
   self:build_window()
 end
