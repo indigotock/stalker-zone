@@ -183,8 +183,6 @@ function stalker_zone:OnLoad()
     nil,
     self)
 
-  self.cOverrideWindow:Show(true)
-
   Apollo.RegisterSlashCommand("sz","invoke",self)
   self:recalculate_angle()
   self.cConfigWindow:Show(true)
