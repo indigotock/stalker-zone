@@ -12,12 +12,11 @@ require "Window"
 local stalker_zone = {} 
 
 local aDiffNames = {
-  'Normal Mob',
-  '',
-  'Tough Mob',
-  'Small Boss',
-  'Big Boss',
-  'Huge Boss'
+  'Minion',
+  'Grunt',
+  'Challenger',
+  'Superior',
+  'Prime'
 }
 
 function stalker_zone:new(o)
@@ -54,7 +53,7 @@ function stalker_zone:set_defaults()
   self.tSettings.bOnlyCombat = false
   self.tSettings.bOnlyStalker = true
   self.tSettings.aUseLAS = {true,true,true,true}
-  self.tSettings.aDifficultyLengths = {5, 5, 7, 7, 10, 15}
+  self.tSettings.aDifficultyLengths = {5, 5, 7, 10, 12}
   self.tSettings.aMobOverrides = { ['Mystwing Shredder'] = 75 }
 end
 
@@ -71,7 +70,7 @@ function stalker_zone:build_window()
   if self.cConfigWindow:FindChild('facing_colour_picker'):FindChild('red_slider') then
     self.cConfigWindow:FindChild('facing_colour_picker'):DestroyChildren()
   end
-  for diff = 1, 6 do
+  for diff = 1, 5 do
     if self.cConfigWindow:FindChild('diff_slider_'..diff) and self.cConfigWindow:FindChild('diff_slider_'..diff):FindChild('slider') then
       self.cConfigWindow:FindChild('diff_slider_'..diff):DestroyChildren()
     end
@@ -107,14 +106,12 @@ function stalker_zone:build_window()
     })
 
 
-  for diff = 1, 6 do
-    if diff ~= 2 then
+  for diff = 1, 5 do
       self.btools.gui.slider(self.cConfigWindow:FindChild('diff_slider_'..diff), {
         nMinValue = 3, nMaxValue=40, nInitialValue = self.tSettings.aDifficultyLengths[diff],
         fChangeCallback = function(val) self.tSettings.aDifficultyLengths[diff] = val end,
         sHeader = aDiffNames[diff]
         })
-    end
   end
 
 
@@ -269,7 +266,7 @@ function stalker_zone:draw_zone()
   local targ_pos = targ:GetPosition()
   local targ_pos_vector = Vector3.New(targ_pos.x,targ_pos.y,targ_pos.z)
 
-  local diff = targ:GetDifficulty() or 1
+  local diff = targ:GetRank() or 1
   local line_len = self.tSettings.aMobOverrides[targ:GetName()] or self.tSettings.aDifficultyLengths[diff] or self.tSettings.aDifficultyLengths[1]
   if  self.tSettings.bShowFacing then 
     local face_vector = Vector3.New(targ_pos_vector.x+line_len*math.sin(targ_angle), targ_pos_vector.y, targ_pos_vector.z+line_len*math.cos(targ_angle))
