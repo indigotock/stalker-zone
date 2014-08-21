@@ -54,7 +54,7 @@ function stalker_zone:set_defaults()
   self.tSettings.bOnlyStalker = true
   self.tSettings.aUseLAS = {true,true,true,true}
   self.tSettings.aDifficultyLengths = {5, 5, 7, 10, 12}
-  self.tSettings.aMobOverrides = { ['Mystwing Shredder'] = 75 }
+  self.tSettings.aMobOverrides = { ['Phage Maw'] = 20 }
 end
 
 function stalker_zone:build_window()
