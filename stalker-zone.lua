@@ -121,6 +121,8 @@ function stalker_zone:build_window()
 
   list:DestroyChildren()
 
+  table.sort(self.tSettings.aMobOverrides)
+
   for name, len in pairs(self.tSettings.aMobOverrides) do
     self:add_override_item(name, len)
   end
@@ -131,7 +133,10 @@ function stalker_zone:build_window()
     list,
     self
     )
+  local targ = GameLib.GetPlayerUnit()
+  targ = targ:GetTarget() or nil
 
+  self.cNewItem:FindChild('new_npc_name'):SetText(targ and targ:GetName() or '')
   self.cNewTicker = self.btools.gui.number_ticker(self.cNewItem:FindChild('new_npc_length'),
   {
     nDivide = 0, nDefaultValue = 3
