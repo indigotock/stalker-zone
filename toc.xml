@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Addon Author="" APIVersion="9" Name="Stalker Zone" Description="">
+<Addon Author="" APIVersion="9" Name="Stalker Zone" Description="Having trouble finding the sweet spot to stand behind a mob? Then this is the Addon for you!">
     <Script Name="btools/gui/drop_button.lua"/>
     <Script Name="btools/gui/number_ticker.lua"/>
     <Script Name="btools/gui/search_list.lua"/>
