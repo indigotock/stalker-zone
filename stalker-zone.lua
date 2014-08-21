@@ -190,7 +190,7 @@ function stalker_zone:OnLoad()
 
   Apollo.RegisterSlashCommand("sz","invoke",self)
   self:recalculate_angle()
-  self.cConfigWindow:Show(true)
+  self.cConfigWindow:Show(false)
   self:build_window()
 
   Apollo.RegisterEventHandler('TargetUnitChanged', 'event_change_target', self)
