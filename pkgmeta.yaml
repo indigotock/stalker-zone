@@ -1,0 +1,3 @@
+externals:
+  btools:
+    url: https://github.com/indigotock/brucey-tools.git
