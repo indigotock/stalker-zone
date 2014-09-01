@@ -134,7 +134,9 @@ function stalker_zone:build_window()
     self
     )
   local targ = GameLib.GetPlayerUnit()
-  targ = targ:GetTarget() or nil
+  if targ then
+    targ = targ:GetTarget()
+  end
 
   self.cNewItem:FindChild('new_npc_name'):SetText(targ and targ:GetName() or '')
   self.cNewTicker = self.btools.gui.number_ticker(self.cNewItem:FindChild('new_npc_length'),
